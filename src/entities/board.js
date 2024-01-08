@@ -1,38 +1,42 @@
-import { Canvas } from "./canvas.js";
 import { Piece, pieceTypes, teamTypes } from "./piece.js";
 
-export class Board extends Canvas {
-	#colors = {
+export class Board {
+	colors = {
 		white: "#dddddd",
 		black: "#222222",
 	};
-	#cells = [];
-	#pieces = [];
-	#files = ["a", "b", "c", "d", "e", "f", "g", "h"];
-	#ranks = ["8", "7", "6", "5", "4", "3", "2", "1"];
+	files = ["a", "b", "c", "d", "e", "f", "g", "h"];
+	ranks = ["8", "7", "6", "5", "4", "3", "2", "1"];
 
-	constructor() {
-		super();
+	constructor(canvas, ctx) {
+		this.canvas = canvas;
+		this.ctx = ctx;
+		this.cells = [];
+		this.grabbedNote = "";
+
 		this.setInitialBoard();
 		this.setInitialPieces();
 	}
 
 	draw() {
 		this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-		this.#cells.forEach((row, i) => {
+		let grabbedPiece = null;
+		this.cells.forEach((row, i) => {
 			row.forEach((cell, j) => {
 				this.ctx.fillStyle = this.getCellColor(i, j);
 				this.ctx.fillRect(cell.x, cell.y, cell.w, cell.h);
 				this.drawNoteOnCell(i, j);
+				if (cell.piece) {
+					if (cell.piece.note === this.grabbedNote) grabbedPiece = cell.piece;
+					else cell.piece.draw();
+				}
 			});
 		});
-		this.#pieces.forEach((piece) => {
-			piece.draw();
-		});
+		grabbedPiece?.draw();
 	}
 
 	drawNoteOnCell(i, j) {
-		const { x, y, w, h } = this.#cells[i][j];
+		const { x, y, w, h } = this.cells[i][j];
 		const note = this.indexToNote(i, j);
 
 		this.ctx.textAlign = "center";
@@ -45,54 +49,117 @@ export class Board extends Canvas {
 		this.ctx.globalAlpha = 1;
 	}
 
+	setGrabbedNote(x, y) {
+		const note = this.coordsToNote(x, y);
+		if (note) {
+			const cell = this.getCellByNote(note);
+			if (cell.piece) this.grabbedNote = note;
+		}
+	}
+
+	moveGrabbedPiece(x, y) {
+		if (!this.grabbedNote) return;
+		const [i, j] = this.noteToIndex(this.grabbedNote);
+		const cell = this.cells[i][j];
+		const { w, h } = cell.piece.position;
+		cell.piece.position = { x: x - w / 2, y: y - h / 2, w, h };
+		this.draw();
+	}
+
+	putGrabbedPiece(x, y) {
+		if (!this.grabbedNote) return;
+		const note = this.coordsToNote(x, y);
+		const { piece } = this.getCellByNote(this.grabbedNote);
+		this.movePieceLegally(piece, note);
+		this.grabbedNote = "";
+	}
+
+	movePieceLegally(piece, note) {
+		let destNote = note;
+		const cell = this.getCellByNote(note);
+		if (cell.piece) destNote = piece.note;
+		const { x, y, w, h } = this.getCellByNote(destNote);
+		piece.position = { x, y, w, h };
+
+		const [prevI, prevJ] = this.noteToIndex(piece.note);
+		const [curI, curJ] = this.noteToIndex(destNote);
+
+		this.cells[prevI][prevJ].piece = null;
+		this.cells[curI][curJ].piece = piece;
+		piece.note = destNote;
+
+		this.draw();
+	}
+
 	getCellColor(i, j) {
 		const isWhite = i % 2 == j % 2;
-		return isWhite ? this.#colors.white : this.#colors.black;
+		return isWhite ? this.colors.white : this.colors.black;
 	}
 
 	getNoteColor(i, j) {
-		return this.getCellColor(i, j) === this.#colors.white ? this.#colors.black : this.#colors.white;
+		return this.getCellColor(i, j) === this.colors.white ? this.colors.black : this.colors.white;
 	}
 
 	indexToNote(i, j) {
-		const note = this.#files[j] + this.#ranks[i];
+		const note = this.files[j] + this.ranks[i];
 		return note;
 	}
 
 	noteToIndex(note) {
 		const [file, rank] = note.split("");
-		const index = [this.#ranks.indexOf(rank), this.#files.indexOf(file)];
+		const index = [this.ranks.indexOf(rank), this.files.indexOf(file)];
 		return index;
+	}
+
+	coordsToNote(x, y) {
+		let note = "";
+		for (const row of this.cells) {
+			for (const cell of row) {
+				if (x > cell.x && x < cell.x + cell.w && y > cell.y && y < cell.y + cell.h) {
+					note = cell.note;
+					break;
+				}
+			}
+			if (note) break;
+		}
+		return note;
 	}
 
 	getCellByNote(note) {
 		const [i, j] = this.noteToIndex(note);
-		const cell = this.#cells[i][j];
+		const cell = this.cells[i][j];
 		return cell;
 	}
 
 	setInitialBoard() {
-		this.#cells = [];
+		this.cells = [];
 		const box = { h: this.canvas.height / 8, w: this.canvas.width / 8 };
 
 		for (let i = 0; i < 8; i++) {
 			const row = [];
 			for (let j = 0; j < 8; j++) {
-				row.push({ x: j * box.w, y: i * box.h, w: box.w, h: box.h, piece: null });
+				row.push({
+					x: j * box.w,
+					y: i * box.h,
+					w: box.w,
+					h: box.h,
+					note: this.indexToNote(i, j),
+					piece: null,
+				});
 			}
-			this.#cells.push(row);
+			this.cells.push(row);
 		}
 	}
 
-	setInitialPieces() {
-		this.#pieces = [];
+	setPiece(piece) {
+		const [i, j] = this.noteToIndex(piece.note);
+		this.cells[i][j].piece = piece;
+	}
 
-		this.#files.forEach((file) => {
-			const pawn = {
-				white: new Piece(this, pieceTypes.pawn, teamTypes.white, file + "2", null),
-				black: new Piece(this, pieceTypes.pawn, teamTypes.black, file + "7", null),
-			};
-			this.#pieces.push(pawn.white, pawn.black);
+	setInitialPieces() {
+		this.files.forEach((file) => {
+			new Piece(this, pieceTypes.pawn, teamTypes.white, file + "2");
+			new Piece(this, pieceTypes.pawn, teamTypes.black, file + "7");
 
 			let pieceType;
 			if (file === "a" || file === "h") pieceType = pieceTypes.rook;
@@ -101,13 +168,8 @@ export class Board extends Canvas {
 			if (file === "d") pieceType = pieceTypes.queen;
 			if (file === "e") pieceType = pieceTypes.king;
 
-			const piece = {
-				[pieceType]: {
-					white: new Piece(this, pieceType, teamTypes.white, file + "1", null),
-					black: new Piece(this, pieceType, teamTypes.black, file + "8", null),
-				},
-			};
-			this.#pieces.push(piece[pieceType].white, piece[pieceType].black);
+			new Piece(this, pieceType, teamTypes.white, file + "1");
+			new Piece(this, pieceType, teamTypes.black, file + "8");
 		});
 	}
 }

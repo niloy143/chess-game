@@ -29,16 +29,20 @@ export class Piece {
 	};
 	#padding = 15;
 
-	constructor(board, pieceType, teamType, note, position) {
+	constructor(board, pieceType, teamType, note) {
 		this.pieceType = pieceType;
 		this.teamType = teamType;
 		this.board = board;
 		this.note = note;
-		this.position = position;
+
+		const [i, j] = this.board.noteToIndex(note);
+		this.position = this.board.cells[i][j];
+
+		this.board.setPiece(this);
 	}
 
 	draw() {
-		const { x, y, w, h } = this.position || this.board.getCellByNote(this.note);
+		const { x, y, w, h } = this.position;
 		this.board.ctx.drawImage(
 			this.#img,
 			this.#crop.x[this.pieceType],
