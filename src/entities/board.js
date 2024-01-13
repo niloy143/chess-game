@@ -2,8 +2,12 @@ import { Piece, pieceTypes, teamTypes } from "./piece.js";
 
 export class Board {
 	colors = {
-		white: "#dddddd",
-		black: "#222222",
+		white: "#cceae1",
+		black: "#487567",
+	};
+	border = {
+		color: "#16ba3f",
+		width: 4,
 	};
 	files = ["a", "b", "c", "d", "e", "f", "g", "h"];
 	ranks = ["8", "7", "6", "5", "4", "3", "2", "1"];
@@ -32,7 +36,20 @@ export class Board {
 				}
 			});
 		});
-		grabbedPiece?.draw();
+		if (grabbedPiece) {
+			const { x, y, w, h } = grabbedPiece.position;
+			const note = this.coordsToNote(x + w / 2, y + h / 2);
+			this.drawBorder(note);
+			grabbedPiece.draw();
+		}
+	}
+
+	drawBorder(note) {
+		const { x, y, w, h } = this.getCellByNote(note);
+		this.ctx.strokeStyle = this.border.color;
+		const lw = this.border.width;
+		this.ctx.lineWidth = lw;
+		this.ctx.strokeRect(x + lw / 2, y + lw / 2, w - lw, h - lw);
 	}
 
 	drawNoteOnCell(i, j) {
@@ -59,35 +76,24 @@ export class Board {
 
 	moveGrabbedPiece(x, y) {
 		if (!this.grabbedNote) return;
-		const [i, j] = this.noteToIndex(this.grabbedNote);
-		const cell = this.cells[i][j];
+		const cell = this.getCellByNote(this.grabbedNote);
 		const { w, h } = cell.piece.position;
-		cell.piece.position = { x: x - w / 2, y: y - h / 2, w, h };
+		let xl = Math.max(x - w / 2, 0),
+			yl = Math.max(y - h / 2, 0);
+		if (xl + w > this.canvas.width) xl = this.canvas.width - w;
+		if (yl + h > this.canvas.height) yl = this.canvas.height - h;
+		cell.piece.position = { x: xl, y: yl, w, h };
 		this.draw();
 	}
 
-	putGrabbedPiece(x, y) {
+	putGrabbedPiece() {
 		if (!this.grabbedNote) return;
-		const note = this.coordsToNote(x, y);
 		const { piece } = this.getCellByNote(this.grabbedNote);
-		this.movePieceLegally(piece, note);
+		const { x, y, w, h } = piece.position;
+		const note = this.coordsToNote(x + w / 2, y + h / 2);
+		piece.moveLegally(note);
+		this.draw();
 		this.grabbedNote = "";
-	}
-
-	movePieceLegally(piece, note) {
-		let destNote = note;
-		const cell = this.getCellByNote(note);
-		if (cell.piece) destNote = piece.note;
-		const { x, y, w, h } = this.getCellByNote(destNote);
-		piece.position = { x, y, w, h };
-
-		const [prevI, prevJ] = this.noteToIndex(piece.note);
-		const [curI, curJ] = this.noteToIndex(destNote);
-
-		this.cells[prevI][prevJ].piece = null;
-		this.cells[curI][curJ].piece = piece;
-		piece.note = destNote;
-
 		this.draw();
 	}
 
@@ -112,17 +118,13 @@ export class Board {
 	}
 
 	coordsToNote(x, y) {
-		let note = "";
 		for (const row of this.cells) {
 			for (const cell of row) {
-				if (x > cell.x && x < cell.x + cell.w && y > cell.y && y < cell.y + cell.h) {
-					note = cell.note;
-					break;
+				if (x >= cell.x && x <= cell.x + cell.w && y >= cell.y && y <= cell.y + cell.h) {
+					return cell.note;
 				}
 			}
-			if (note) break;
 		}
-		return note;
 	}
 
 	getCellByNote(note) {

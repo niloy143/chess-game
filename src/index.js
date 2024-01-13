@@ -21,8 +21,8 @@ function onGrabbing(e) {
 	board.moveGrabbedPiece(e.offsetX, e.offsetY);
 }
 
-function onGrabEnd(e) {
-	board.putGrabbedPiece(e.offsetX, e.offsetY);
+function onGrabEnd() {
+	board.putGrabbedPiece();
 	canvas.style.cursor = "default";
 }
 
@@ -32,5 +32,5 @@ canvas.addEventListener("touchstart", onGrabStart);
 canvas.addEventListener("pointermove", onGrabbing);
 canvas.addEventListener("touchmove", onGrabbing);
 
-canvas.addEventListener("pointerup", onGrabEnd);
-canvas.addEventListener("touchend", onGrabEnd);
+window.addEventListener("pointerup", onGrabEnd);
+window.addEventListener("touchend", onGrabEnd);

@@ -23,11 +23,14 @@ export class Piece {
 			[pieceTypes.queen]: 200,
 			[pieceTypes.king]: 0,
 		},
-		y: 0,
+		y: {
+			[teamTypes.white]: 200,
+			[teamTypes.black]: 0,
+		},
 		w: 200,
 		h: 200,
 	};
-	#padding = 15;
+	#padding = 5;
 
 	constructor(board, pieceType, teamType, note) {
 		this.pieceType = pieceType;
@@ -46,7 +49,7 @@ export class Piece {
 		this.board.ctx.drawImage(
 			this.#img,
 			this.#crop.x[this.pieceType],
-			this.#crop.y,
+			this.#crop.y[this.teamType],
 			this.#crop.w,
 			this.#crop.h,
 			x + this.#padding / 2,
@@ -54,5 +57,21 @@ export class Piece {
 			w - this.#padding,
 			h - this.#padding
 		);
+	}
+
+	moveLegally(note) {
+		let from = this.note,
+			to = note;
+		const cell = this.board.getCellByNote(to);
+		if (cell.piece) to = from;
+		const { x, y, w, h } = this.board.getCellByNote(to);
+		this.position = { x, y, w, h };
+
+		const [prevI, prevJ] = this.board.noteToIndex(from);
+		const [curI, curJ] = this.board.noteToIndex(to);
+
+		this.board.cells[prevI][prevJ].piece = null;
+		this.board.cells[curI][curJ].piece = this;
+		this.note = to;
 	}
 }
