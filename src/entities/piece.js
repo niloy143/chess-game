@@ -103,7 +103,31 @@ export class Piece {
 				return paths;
 			},
 			[pieceTypes.knight]: (teamType) => {
-				return [];
+				const moves = [
+					[1, 2],
+					[2, 1],
+					[-1, 2],
+					[-2, 1],
+					[1, -2],
+					[2, -1],
+					[-1, -2],
+					[-2, -1],
+				];
+
+				const legalCells = moves
+					.map(([x, y]) => {
+						const [i, j] = this.board.noteToIndex(this.note);
+						return this.board.cells[i + x]?.[j + y];
+					})
+					.filter((cell) => {
+						if (!cell) return false;
+						if (cell.piece && cell.piece.teamType === teamType) return false;
+						return true;
+					});
+
+				const paths = legalCells.map((cell) => cell.note);
+
+				return paths;
 			},
 			[pieceTypes.bishop]: (teamType) => {
 				return [];
