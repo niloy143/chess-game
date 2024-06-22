@@ -83,16 +83,14 @@ export class Piece {
 
 	getLegalMoves() {
 		const [i, j] = this.board.noteToIndex(this.note);
+		let paths = [];
 
-		const moves = {
-			[pieceTypes.pawn]: (teamType) => {
-				const paths = [],
-					cells = this.board.cells;
-
+		const getPaths = {
+			[pieceTypes.pawn]: () => {
 				const [front, front2, left, right] =
-					teamType === teamTypes.white
-						? [cells[i - 1]?.[j], cells[i - 2]?.[j], cells[i - 1]?.[j - 1], cells[i - 1]?.[j + 1]]
-						: [cells[i + 1]?.[j], cells[i + 2]?.[j], cells[i + 1]?.[j - 1], cells[i + 1]?.[j + 1]];
+					this.teamType === teamTypes.white
+						? [this.board.cells[i - 1]?.[j], this.board.cells[i - 2]?.[j], this.board.cells[i - 1]?.[j - 1], this.board.cells[i - 1]?.[j + 1]]
+						: [this.board.cells[i + 1]?.[j], this.board.cells[i + 2]?.[j], this.board.cells[i + 1]?.[j - 1], this.board.cells[i + 1]?.[j + 1]];
 
 				if (front && !front.piece) {
 					paths.push(front.note);
@@ -100,10 +98,9 @@ export class Piece {
 				}
 				if (left && left.piece && left.piece.teamType !== this.teamType) paths.push(left.note);
 				if (right && right.piece && right.piece.teamType !== this.teamType) paths.push(right.note);
-				return paths;
 			},
-			[pieceTypes.knight]: (teamType) => {
-				const moves = [
+			[pieceTypes.knight]: () => {
+				[
 					[1, 2],
 					[2, 1],
 					[-1, 2],
@@ -112,37 +109,91 @@ export class Piece {
 					[2, -1],
 					[-1, -2],
 					[-2, -1],
-				];
-
-				const legalCells = moves
-					.map(([x, y]) => {
-						const [i, j] = this.board.noteToIndex(this.note);
-						return this.board.cells[i + x]?.[j + y];
-					})
-					.filter((cell) => {
-						if (!cell) return false;
-						if (cell.piece && cell.piece.teamType === teamType) return false;
-						return true;
-					});
-
-				const paths = legalCells.map((cell) => cell.note);
-
-				return paths;
+				].forEach(([x, y]) => {
+					const cell = this.board.cells[i + x]?.[j + y];
+					if (cell && !(cell.piece && cell.piece.teamType === this.teamType)) paths.push(cell.note);
+				});
 			},
-			[pieceTypes.bishop]: (teamType) => {
-				return [];
+			[pieceTypes.bishop]: () => {
+				[
+					[1, 1],
+					[-1, -1],
+					[1, -1],
+					[-1, 1],
+				].forEach(([x, y]) => {
+					let [ci, cj] = [i, j];
+					while (true) {
+						ci += x;
+						cj += y;
+						const cell = this.board.cells[ci]?.[cj];
+						if (!cell) break;
+						if (cell.piece && cell.piece.teamType === this.teamType) break;
+						paths.push(cell.note);
+						if (cell.piece) break;
+					}
+				});
 			},
-			[pieceTypes.rook]: (teamType) => {
-				return [];
+			[pieceTypes.rook]: () => {
+				[
+					[0, 1],
+					[1, 0],
+					[0, -1],
+					[-1, 0],
+				].forEach(([x, y]) => {
+					let [ci, cj] = [i, j];
+					while (true) {
+						ci += x;
+						cj += y;
+						const cell = this.board.cells[ci]?.[cj];
+						if (!cell) break;
+						if (cell.piece && cell.piece.teamType === this.teamType) break;
+						paths.push(cell.note);
+						if (cell.piece) break;
+					}
+				});
 			},
-			[pieceTypes.queen]: (teamType) => {
-				return [];
+			[pieceTypes.queen]: () => {
+				[
+					[0, 1],
+					[1, 0],
+					[1, 1],
+					[0, -1],
+					[-1, 0],
+					[-1, -1],
+					[1, -1],
+					[-1, 1],
+				].forEach(([x, y]) => {
+					let [ci, cj] = [i, j];
+					while (true) {
+						ci += x;
+						cj += y;
+						const cell = this.board.cells[ci]?.[cj];
+						if (!cell) break;
+						if (cell.piece && cell.piece.teamType === this.teamType) break;
+						paths.push(cell.note);
+						if (cell.piece) break;
+					}
+				});
 			},
-			[pieceTypes.king]: (teamType) => {
-				return [];
+			[pieceTypes.king]: () => {
+				[
+					[0, 1],
+					[1, 0],
+					[1, 1],
+					[0, -1],
+					[-1, 0],
+					[-1, -1],
+					[1, -1],
+					[-1, 1],
+				].forEach(([x, y]) => {
+					const cell = this.board.cells[i + x]?.[j + y];
+					if (cell && !(cell.piece && cell.piece.teamType === this.teamType)) paths.push(cell.note);
+				});
 			},
 		};
 
-		return moves[this.pieceType](this.teamType);
+		getPaths[this.pieceType]();
+
+		return paths;
 	}
 }
