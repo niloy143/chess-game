@@ -40,16 +40,23 @@ export class Board {
 			const { x, y, w, h } = grabbedPiece.position;
 			const note = this.coordsToNote(x + w / 2, y + h / 2);
 			this.drawBorder(note);
+			grabbedPiece.getLegalMoves().forEach((note) => {
+				this.drawLegalNote(note);
+			});
 			grabbedPiece.draw();
 		}
 	}
 
-	drawBorder(note) {
+	drawBorder(note, color) {
 		const { x, y, w, h } = this.getCellByNote(note);
-		this.ctx.strokeStyle = this.border.color;
+		this.ctx.strokeStyle = color || this.border.color;
 		const lw = this.border.width;
 		this.ctx.lineWidth = lw;
 		this.ctx.strokeRect(x + lw / 2, y + lw / 2, w - lw, h - lw);
+	}
+
+	drawLegalNote(note) {
+		this.drawBorder(note, "orange");
 	}
 
 	drawNoteOnCell(i, j) {

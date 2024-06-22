@@ -37,6 +37,7 @@ export class Piece {
 		this.teamType = teamType;
 		this.board = board;
 		this.note = note;
+		this.moveCount = 0;
 
 		const [i, j] = this.board.noteToIndex(note);
 		this.position = this.board.cells[i][j];
@@ -62,8 +63,8 @@ export class Piece {
 	moveLegally(note) {
 		let from = this.note,
 			to = note;
-		const cell = this.board.getCellByNote(to);
-		if (cell.piece) to = from;
+		if (!this.isLegalMove(to)) to = from;
+		else this.moveCount++;
 		const { x, y, w, h } = this.board.getCellByNote(to);
 		this.position = { x, y, w, h };
 
@@ -73,5 +74,51 @@ export class Piece {
 		this.board.cells[prevI][prevJ].piece = null;
 		this.board.cells[curI][curJ].piece = this;
 		this.note = to;
+	}
+
+	isLegalMove(to) {
+		const legalMoves = this.getLegalMoves();
+		return legalMoves.includes(to);
+	}
+
+	getLegalMoves() {
+		const [i, j] = this.board.noteToIndex(this.note);
+
+		const moves = {
+			[pieceTypes.pawn]: (teamType) => {
+				const paths = [],
+					cells = this.board.cells;
+
+				const [front, front2, left, right] =
+					teamType === teamTypes.white
+						? [cells[i - 1]?.[j], cells[i - 2]?.[j], cells[i - 1]?.[j - 1], cells[i - 1]?.[j + 1]]
+						: [cells[i + 1]?.[j], cells[i + 2]?.[j], cells[i + 1]?.[j - 1], cells[i + 1]?.[j + 1]];
+
+				if (front && !front.piece) {
+					paths.push(front.note);
+					if (this.moveCount < 1 && front2 && !front2.piece) paths.push(front2.note);
+				}
+				if (left && left.piece && left.piece.teamType !== this.teamType) paths.push(left.note);
+				if (right && right.piece && right.piece.teamType !== this.teamType) paths.push(right.note);
+				return paths;
+			},
+			[pieceTypes.knight]: (teamType) => {
+				return [];
+			},
+			[pieceTypes.bishop]: (teamType) => {
+				return [];
+			},
+			[pieceTypes.rook]: (teamType) => {
+				return [];
+			},
+			[pieceTypes.queen]: (teamType) => {
+				return [];
+			},
+			[pieceTypes.king]: (teamType) => {
+				return [];
+			},
+		};
+
+		return moves[this.pieceType](this.teamType);
 	}
 }
