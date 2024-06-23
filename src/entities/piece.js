@@ -12,26 +12,29 @@ export const pieceTypes = {
 	king: "KING",
 };
 
-export class Piece {
-	#img = document.getElementById("img");
-	#crop = {
-		x: {
-			[pieceTypes.pawn]: 1000,
-			[pieceTypes.knight]: 800,
-			[pieceTypes.bishop]: 600,
-			[pieceTypes.rook]: 400,
-			[pieceTypes.queen]: 200,
-			[pieceTypes.king]: 0,
-		},
-		y: {
-			[teamTypes.white]: 200,
-			[teamTypes.black]: 0,
-		},
-		w: 200,
-		h: 200,
-	};
-	#padding = 5;
+export const image = {
+	width: 300,
+	height: 300,
+	padding: 5,
+	[teamTypes.white]: {
+		[pieceTypes.king]: document.getElementById("wk"),
+		[pieceTypes.queen]: document.getElementById("wq"),
+		[pieceTypes.rook]: document.getElementById("wr"),
+		[pieceTypes.bishop]: document.getElementById("wb"),
+		[pieceTypes.knight]: document.getElementById("wn"),
+		[pieceTypes.pawn]: document.getElementById("wp"),
+	},
+	[teamTypes.black]: {
+		[pieceTypes.king]: document.getElementById("bk"),
+		[pieceTypes.queen]: document.getElementById("bq"),
+		[pieceTypes.rook]: document.getElementById("br"),
+		[pieceTypes.bishop]: document.getElementById("bb"),
+		[pieceTypes.knight]: document.getElementById("bn"),
+		[pieceTypes.pawn]: document.getElementById("bp"),
+	},
+};
 
+export class Piece {
 	constructor(board, pieceType, teamType, note) {
 		this.pieceType = pieceType;
 		this.teamType = teamType;
@@ -48,15 +51,15 @@ export class Piece {
 	draw() {
 		const { x, y, w, h } = this.position;
 		this.board.ctx.drawImage(
-			this.#img,
-			this.#crop.x[this.pieceType],
-			this.#crop.y[this.teamType],
-			this.#crop.w,
-			this.#crop.h,
-			x + this.#padding / 2,
-			y + this.#padding / 2,
-			w - this.#padding,
-			h - this.#padding
+			image[this.teamType][this.pieceType],
+			0,
+			0,
+			image.width,
+			image.height,
+			x + image.padding / 2,
+			y + image.padding / 2,
+			w - image.padding,
+			h - image.padding
 		);
 	}
 
