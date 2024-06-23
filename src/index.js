@@ -1,8 +1,8 @@
 import { Board } from "./entities/board.js";
 
 const canvas = document.getElementById("canvas");
-canvas.width = 600;
-canvas.height = 600;
+canvas.height = (Math.round(Math.min(window.innerHeight, window.innerWidth)) / 10) * 8;
+canvas.width = canvas.height;
 const ctx = canvas.getContext("2d");
 
 const board = new Board(canvas, ctx);

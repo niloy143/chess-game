@@ -189,6 +189,30 @@ export class Piece {
 					const cell = this.board.cells[i + x]?.[j + y];
 					if (cell && !(cell.piece && cell.piece.teamType === this.teamType)) paths.push(cell.note);
 				});
+
+				// castling
+				if (this.moveCount < 1) {
+					let lj = j;
+					while (true) {
+						lj--;
+						const cell = this.board.cells[i][lj];
+						if (!cell) break;
+						if (cell.piece) {
+							if (cell.piece.pieceType === pieceTypes.rook && cell.piece.moveCount < 1) paths.push(this.board.indexToNote(i, j - 2));
+							break;
+						}
+					}
+					let rj = j;
+					while (true) {
+						rj++;
+						const cell = this.board.cells[i][rj];
+						if (!cell) break;
+						if (cell.piece) {
+							if (cell.piece.pieceType === pieceTypes.rook && cell.piece.moveCount < 1) paths.push(this.board.indexToNote(i, j + 2));
+							break;
+						}
+					}
+				}
 			},
 		};
 
