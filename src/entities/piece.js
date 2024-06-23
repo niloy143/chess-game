@@ -71,6 +71,23 @@ export class Piece {
 		const [prevI, prevJ] = this.board.noteToIndex(from);
 		const [curI, curJ] = this.board.noteToIndex(to);
 
+		/* =========== Castling (Start) =========== */
+		if (this.pieceType === pieceTypes.king && prevI === curI && Math.abs(curJ - prevJ) === 2) {
+			const rookDestPoint = (curJ - prevJ) / 2;
+			const rookDestNote = this.board.indexToNote(prevI, prevJ + rookDestPoint);
+			let tempJ = curJ;
+			while (true) {
+				tempJ += rookDestPoint;
+				const cell = this.board.cells[prevI][tempJ];
+				if (!cell) break;
+				if (cell.piece && cell.piece.pieceType === pieceTypes.rook) {
+					cell.piece.moveLegally(rookDestNote);
+					break;
+				}
+			}
+		}
+		/* =========== Castling (End) =========== */
+
 		this.board.cells[prevI][prevJ].piece = null;
 		this.board.cells[curI][curJ].piece = this;
 		this.note = to;
